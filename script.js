@@ -461,8 +461,12 @@ Then, below that exact line, provide a **numbered list (using 1., 2., 3., etc.)*
 Example format for the suggestions section:
 Suggested Deep Dive Topics:
 1. Specific sub-topic one detailing X.
-2. Key question regarding Y and its implications.
-3. Analysis of differing viewpoint Z.
+2. Specific sub-topic two detailing X.
+3. Specific sub-topic three detailing X.
+4. Key questions regarding Y1 and its implications.
+5. Key questions regarding Y2 and its implications.
+6. If Applicable, analysis of differing viewpoint Z1.
+7. If Applicable, analysis of differing viewpoint Z2.
 
 ${contextFilesString}
 
