@@ -37,15 +37,39 @@
         </section>
 
         <section id="research-section" class="card" style="display: none;">
-            <h2>Research Topic</h2>
+            <h2>Research Topic & Focus</h2>
+
             <label for="research-topic">Enter your research topic or question:</label>
             <textarea id="research-topic" placeholder="e.g., Analyze the evolution of AI ethics guidelines..."></textarea>
+
+            <div id="tone-controls">
+                <h4>Research Tone & Focus (Optional)</h4>
+                <div class="control-group">
+                    <label for="tone-select">Overall Tone:</label>
+                    <select id="tone-select">
+                        <option value="Neutral/Objective" selected>Neutral / Objective</option>
+                        <option value="Critical Analysis">Critical Analysis</option>
+                        <option value="Enthusiast/Positive">Enthusiast / Positive</option>
+                        <option value="Skeptical/Cautious">Skeptical / Cautious</option>
+                        <option value="Travel Focused">Travel Focused</option>
+                        <option value="Technology Focused">Technology Focused</option>
+                        <option value="Business Focused">Business Focused</option>
+                        </select>
+                </div>
+
+                <div class="control-group checkbox-group">
+                     <input type="checkbox" id="opposing-views-checkbox" checked>
+                     <label for="opposing-views-checkbox">Include & Analyze Opposing Viewpoints</label>
+                </div>
+
+                <div class="control-group">
+                    <label for="custom-focus-input">Additional Focus/Instructions:</label>
+                    <input type="text" id="custom-focus-input" placeholder="e.g., emphasis on European market, technical details for experts...">
+                </div>
+            </div>
             <div class="button-group">
                  <button id="start-research" class="button button-secondary" disabled>Start Initial Research Scan</button>
-				<!--
-                 <button id="reset-button-old" class="button button-outline">Reset Research Old</button>
-                 -->
-            </div>
+                 </div>
         </section>
 
         <section id="progress-section" class="card">

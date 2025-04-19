@@ -39,6 +39,9 @@ const footerResetButton = document.getElementById('footer-reset-button'); // Add
 const footerSynthesizeButton = document.getElementById('footer-synthesize-button'); // Add footer button ref
 // const resetButton = document.getElementById('reset-button'); // Remove old reset button ref
 const currentActionStatusDiv = document.getElementById('current-action-status'); // Add reference
+const toneSelect = document.getElementById('tone-select');
+const opposingViewsCheckbox = document.getElementById('opposing-views-checkbox');
+const customFocusInput = document.getElementById('custom-focus-input');
 
 
 // const resetButton = document.getElementById('reset-button');
@@ -53,6 +56,9 @@ let suggestedTopics = []; // Stores strings of suggested topics
 let completedDeepDives = 0; // Count completed deep dives
 let totalSuggestions = 0; // Count total suggestions made
 let currentTopic = ""; // The main research topic
+let selectedTone = 'Neutral/Objective'; // Default value
+let includeOpposingViews = true; // Default value
+let customFocus = ''; // Default value
 
 // --- Application States ---
 const AppState = {
@@ -230,7 +236,7 @@ function handleReset() {
     // }
 
     // Clear all state and UI elements related to research results
-    resetResearchState();
+    resetResearchState(true);
 
     // Set the state back to allow entering a new topic
     // (Keeps API key and selected model)
@@ -363,9 +369,15 @@ async function startInitialScan() {
         updateUIForState(AppState.CONFIG);
         return;
     }
+    // *** Read Tone Controls ***
+    selectedTone = toneSelect.value;
+    includeOpposingViews = opposingViewsCheckbox.checked;
+    customFocus = customFocusInput.value.trim();
+    console.log(`Starting research with Tone: ${selectedTone}, Opposing Views: ${includeOpposingViews}, Custom Focus: "${customFocus || 'None'}"`);
+    // *** --- ***
 
     updateUIForState(AppState.INITIAL_SCANNING);
-    resetResearchState();
+    resetResearchState(false);
     updateCurrentActionStatus("Performing initial grounded scan...", true); // Update status
     // currentTopic = researchTopicInput.value.trim();
     currentTopic = currentTopic_OG
@@ -446,31 +458,23 @@ function buildInitialPrompt(topic) {
             contextFilesString += `--- File: ${file.name} ---\n${file.content}\n--- End File: ${file.name} ---\n\n`;
         });
     }
+    // Get tone instructions
+    const toneInstructions = getToneFocusInstructions();
 
     // *** Refined Instructions ***
     return `Act as a senior researcher initiating a deep dive into the topic: "${topic}".
 
-First, provide a comprehensive overview of the current state of the topic using **grounded analysis** (Google Search). Include key definitions, history, current relevance, and major ongoing debates or differing viewpoints. Provide verifiable URL links as citations **within the overview text** for main claims using Markdown link format \`[source text](URL)\`.
+${toneInstructions}
 
-**IMPORTANT: After the overview, you MUST include a distinct section for suggested follow-up research.**
-Start this section *EXACTLY* with the following line (no extra formatting):
-Suggested Deep Dive Topics:
-
-Then, below that exact line, provide a **numbered list (using 1., 2., 3., etc.)** of 3-5 specific, actionable sub-topics or key questions that warrant deeper investigation. Each numbered item should be on its own line.
-
-Example format for the suggestions section:
-Suggested Deep Dive Topics:
-1. Specific sub-topic one detailing X.
-2. Specific sub-topic two detailing X.
-3. Specific sub-topic three detailing X.
-4. Key questions regarding Y1 and its implications.
-5. Key questions regarding Y2 and its implications.
-6. If Applicable, analysis of differing viewpoint Z1.
-7. If Applicable, analysis of differing viewpoint Z2.
+Your first task is to perform an initial, **up-to-date, grounded analysis** using Google Search, adhering to the tone and focus guidelines above. Provide:
+1.  A comprehensive overview of the current state of the topic.
+2.  Mention major ongoing debates or controversies (considering the guideline on opposing views).
+3.  Identify and list 3-5 specific, actionable sub-topics or key questions for deeper investigation (formatted as a numbered list starting after "Suggested Deep Dive Topics:").
+4.  Provide verifiable URL links as citations **within the overview text** using Markdown format \`[source text](URL)\`.
 
 ${contextFilesString}
 
-Ensure the entire output is in Markdown format. The overview should come first, followed immediately by the 'Suggested Deep Dive Topics:' line and the numbered list.`;
+Ensure the entire output is in Markdown format.`;
     // *** End Refined Instructions ***
 }
 
@@ -901,10 +905,32 @@ async function startSynthesis() {
 
 // --- Prompt Engineering Functions ---
 
+// Utility function to build tone/focus instructions
+function getToneFocusInstructions() {
+    let instructions = `\n\n--- Tone and Focus Guidelines ---`;
+    instructions += `\nAdopt a primarily "${selectedTone}" tone throughout your response.`;
+
+    if (includeOpposingViews) {
+        instructions += `\nIt is important to identify, present, and objectively analyze significant opposing viewpoints or counter-arguments related to the topic where applicable.`;
+    } else {
+        instructions += `\nFocus mainly on the primary findings and evidence for the main perspective. Briefly mention alternative views only if essential for context, but do not elaborate extensively on them.`;
+    }
+
+    if (customFocus) {
+        // Escape custom focus to prevent prompt injection? Basic escaping for now.
+        const safeFocus = customFocus.replace(/`/g, "'"); // Basic safety
+        instructions += `\nPay special attention to aspects related to the following user instructions: "${safeFocus}". Integrate this focus naturally where relevant.`;
+    }
+    instructions += `\n--- End Guidelines ---`;
+    return instructions;
+}
+
 // Modified: Added parentDiveContent parameter
 function buildDeepDivePrompt(mainTopic, specificSubTopic, history, isSub = false, parentDiveContent = null) {
     const initialScan = history.find(item => item.title === 'Initial Scan & Plan');
     let previousContext = initialScan ? `--- Initial Scan Context ---\n${initialScan.content}\n\n` : "";
+    // Get tone instructions
+    const toneInstructions = getToneFocusInstructions();
     const diveTypeText = isSub ? "specific sub-question/topic derived from previous exploration" : "sub-topic or question identified in the initial scan";
 
     // *** NEW: Add parent dive content if available ***
@@ -920,10 +946,12 @@ function buildDeepDivePrompt(mainTopic, specificSubTopic, history, isSub = false
 
 Focus **specifically** on this ${diveTypeText}: "${specificSubTopic}"
 
+${toneInstructions}
+
 Your primary goal is to:
-1.  Perform a **detailed, grounded exploration** of "${specificSubTopic}" using Google Search, using the context provided below.
+1.  Perform a **detailed, grounded exploration** of "${specificSubTopic}" using Google Search, using the context provided below and adhering to the tone and focus guidelines above.
 2.  Provide in-depth information, evidence, examples, data points, and nuances related *only* to "${specificSubTopic}".
-3.  Discuss different perspectives or arguments concerning it, if relevant.
+3.  Discuss different perspectives or arguments concerning it, if relevant (considering the guideline on opposing views).
 4.  Provide verifiable URL citations as Markdown links \`[source text](URL)\` within your response for significant claims.
 
 **Secondary Goal:** Based *only* on the information you generate *in this response* about "${specificSubTopic}", identify and list 2-3 potential **further refinement questions or more granular sub-topics**.
@@ -983,22 +1011,27 @@ function extractSubSuggestions(text) {
 function buildFinalReportPrompt(topic, history) {
     // Consolidate all previous steps (initial scan + all completed deep dives)
     const fullContext = history.map(step => `--- ${step.title} ---\n${step.content}`).join('\n\n---\n');
+    // Get tone instructions for the FINAL report
+    const toneInstructions = getToneFocusInstructions();
 
     return `Synthesize all the information gathered in the previous research stages (provided below) into a single, comprehensive, well-structured report in **Markdown format** on the topic: "${topic}".
 
+**IMPORTANT: Adhere strictly to the following Tone and Focus Guidelines for this final report:**
+${toneInstructions}
+
 Your final report should:
-1.  Start with a clear introduction defining the topic, its scope (based on the areas explored), and the report's structure.
-2.  Logically integrate the overview from the initial scan and the detailed findings from **all** the deep dive explorations conducted. Organize the content thematically based on the research.
-3.  Objectively discuss any differing viewpoints or controversies identified across the different stages.
-4.  Conclude with a summary of the key takeaways, the current state of understanding, or potential future directions.
-5.  **Ensure all significant claims are supported by the citations gathered previously.** Re-list or integrate the Markdown links "[source_text](URL)" provided in the context below. Do not add new citations unless they were part of the provided context.
-6.  **Format the entire output as clean, readable Markdown.** Use headings ("##", "###"), paragraphs, lists ("*", "1."), bold ("**text**"), italics ("*text*"), code blocks (\`\`\`) etc. appropriately.
-7.  Aim for a formal, objective, and informative tone. Avoid conversational filler.
+1.  Start with a clear introduction defining the topic, its scope, and the report's structure.
+2.  Logically integrate the overview and detailed findings from all previous stages, organizing thematically.
+3.  Objectively discuss differing viewpoints or controversies as per the guidelines.
+4.  Conclude with a summary of key takeaways or the current state of understanding, reflecting the specified tone.
+5.  Ensure claims are supported by citations (\`[source text](URL)\`) present in the context below.
+6.  Format the entire output as clean, readable Markdown.
+7.  Maintain the specified overall tone and focus throughout the synthesized report.
 
 Full context from previous research steps:
 ${fullContext}
 
-Generate the final Markdown report based *only* on the context provided above.`;
+Generate the final Markdown report based *only* on the context provided above and the specified guidelines.`;
 }
 
 
@@ -1123,27 +1156,47 @@ function renderError(message, context = null) {
 }
 
 // Modified Reset Function: Ensure top-level custom group is hidden/reset
-function resetResearchState() {
+function resetResearchState(clearInputs = true) {
     researchHistory = [];
     processLog = [];
     completedDeepDives = 0;
-    currentTopic = "";
-    fileContents = [];
+    // Don't clear currentTopic here if clearInputs is false
+    // fileContents = []; // Don't clear files automatically? Maybe user wants to reuse? Let's keep them.
 
     // Clear dynamic UI elements
     initialScanContentDiv.innerHTML = '';
     initialScanOutputDiv.style.display = 'none';
-    suggestionButtonsDiv.innerHTML = ''; // Clear AI suggestions
-    suggestionsArea.style.display = 'none'; // Hide whole area
-    noSuggestionsMessage.style.display = 'none'; // Hide message
+    suggestionButtonsDiv.innerHTML = '';
+    suggestionsArea.style.display = 'none';
+    noSuggestionsMessage.style.display = 'none';
     deepDiveContentContainer.innerHTML = '';
     deepDiveResultsDiv.style.display = 'none';
     finalReportContentDiv.innerHTML = '<p>The synthesized report will appear here once generated.</p>';
     processDetailsDiv.innerHTML = '<p>This section will show the step-by-step approach taken.</p>';
     processSummarySection.style.display = 'none';
 
+    // Reset inputs ONLY if requested (full reset button click)
+    if (clearInputs) {
+        console.log("Clearing topic and focus inputs.");
+        if(researchTopicInput) researchTopicInput.value = '';
+        // if(fileInfoDiv) fileInfoDiv.textContent = 'No files selected.'; // Keep file info?
+        // if(fileUploadInput) fileUploadInput.value = null; // Keep files selected?
+        if(currentTopic) currentTopic = ""; // Clear topic state variable only on full reset
 
-    // Reset top-level custom input group
+
+        // Reset Tone Controls to Defaults
+        if (toneSelect) toneSelect.value = 'Neutral/Objective'; // Reset dropdown
+        if (opposingViewsCheckbox) opposingViewsCheckbox.checked = true; // Reset checkbox
+        if (customFocusInput) customFocusInput.value = ''; // Clear custom input
+
+        // Reset tone state variables
+        selectedTone = 'Neutral/Objective';
+        includeOpposingViews = true;
+        customFocus = '';
+    }
+
+
+    // Reset top-level custom input group (always reset this one visually)
     if (topLevelCustomDiveGroup) topLevelCustomDiveGroup.style.display = 'none';
     if (topLevelCustomInput) {
         topLevelCustomInput.value = '';
@@ -1152,21 +1205,16 @@ function resetResearchState() {
     if (topLevelCustomButton) topLevelCustomButton.disabled = false;
 
 
-    if(researchTopicInput) researchTopicInput.value = '';
-    if(fileInfoDiv) fileInfoDiv.textContent = 'No files selected.';
-
-
-    if(synthesizeButton){
-        synthesizeButton.style.display = 'none';
-        synthesizeButton.disabled = true;
+    if(footerSynthesizeButton){ // Use footer button reference
+        footerSynthesizeButton.style.display = 'none';
+        footerSynthesizeButton.disabled = true;
     }
     if(loader) loader.style.display = 'none';
     if(synthesisLoader) synthesisLoader.style.display = 'none';
-    if (currentActionStatusDiv) {
-        updateCurrentActionStatus("Idle", false); // Reset status indicator
-    }
-    console.log("Research state reset.");
-    // console.log("Research state reset.");
+    if(currentActionStatusDiv) updateCurrentActionStatus("Idle", false); // Reset status
+
+
+    console.log("Research state reset. Inputs cleared:", clearInputs);
 }
 
 function summarizeContent(text, maxLength = 100) {
