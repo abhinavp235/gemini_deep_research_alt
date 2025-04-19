@@ -1,0 +1,797 @@
+/* --- Global Styles & Variables --- */
+:root {
+    --primary-color: #4285F4; /* Google Blue */
+    --secondary-color: #34A853; /* Google Green */
+    --accent-color: #FBBC05; /* Google Yellow */
+    --error-color: #EA4335; /* Google Red */
+    --positive-color: #1a73e8; /* Slightly different blue for positive actions */
+    --bg-color: #f8f9fa;
+    --text-color: #202124;
+    --card-bg: #ffffff;
+    --border-color: #dadce0;
+    --font-family: 'Roboto', 'Arial', sans-serif;
+    --transition-speed: 0.3s;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-bottom: 80px; /* Add padding to prevent footer overlap - Adjust as needed */
+}
+
+.container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+    width: 95%;
+}
+
+/* --- Header --- */
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px 0;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 500;
+}
+
+/* --- Sections & Cards --- */
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: box-shadow var(--transition-speed) ease;
+    overflow: hidden; /* Prevent margin collapse */
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.card h2 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+    font-size: 1.4em;
+    font-weight: 500;
+}
+.card h3 {
+    color: var(--secondary-color);
+    margin-top: 20px;
+    margin-bottom: 15px;
+     font-size: 1.2em;
+}
+
+
+/* --- Configuration --- */
+#config-section label,
+#research-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #5f6368;
+}
+
+#config-section input[type="text"],
+#config-section input[type="password"],
+#config-section select,
+#research-section textarea,
+#config-section input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1em;
+    transition: border-color var(--transition-speed) ease;
+}
+
+#config-section input[type="text"]:focus,
+#config-section input[type="password"]:focus,
+#config-section select:focus,
+#research-section textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+#research-section textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.api-warning {
+    background-color: rgba(234, 67, 53, 0.1);
+    color: var(--error-color);
+    border: 1px solid var(--error-color);
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+}
+.api-warning strong {
+    font-weight: bold;
+}
+
+.file-info {
+    font-size: 0.9em;
+    color: #5f6368;
+    margin-top: -10px;
+    margin-bottom: 15px;
+}
+
+/* --- Buttons --- */
+.button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+    display: inline-block;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.button:hover {
+    background-color: #3367D6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.button:disabled {
+    background-color: #cccccc !important; /* Ensure override */
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+}
+
+.button-secondary {
+    background-color: var(--secondary-color);
+}
+.button-secondary:hover {
+    background-color: #2a8c4a;
+}
+.button-positive {
+    background-color: var(--positive-color);
+}
+.button-positive:hover {
+    background-color: #1765cc; /* Darker positive blue */
+}
+
+/* --- Progress & Interaction --- */
+#progress-section { display: none; }
+
+.step-output {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.suggestion-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.suggestion-button {
+    background-color: #e8f0fe; /* Light blue */
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 8px 15px;
+    border-radius: 16px; /* Pill shape */
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all var(--transition-speed) ease;
+    position: relative; /* For pseudo-elements */
+    overflow: hidden; /* Contain spinner */
+}
+
+.suggestion-button:hover {
+    background-color: #d2e3fc;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.suggestion-button.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    margin-left: -8px;
+    border: 2px solid rgba(66, 133, 244, 0.5); /* Primary color, semi-transparent */
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    /* Make text slightly transparent when loading */
+    /* color: rgba(66, 133, 244, 0.5); */
+}
+/* Hide text when loading */
+.suggestion-button.loading {
+    color: transparent;
+    pointer-events: none; /* Disable click while loading */
+}
+
+.suggestion-button.completed {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+    cursor: default;
+    opacity: 0.8;
+    pointer-events: none; /* Disable click once completed */
+}
+.suggestion-button.completed::before {
+    content: '✓ '; /* Checkmark */
+    font-weight: bold;
+}
+
+/* --- Add these styles to your existing style.css --- */
+
+/* --- Deep Dive Result Item --- */
+.output-container {
+    position: relative;
+    padding-top: 15px; /* Ensure some space at the top */
+}
+.deep-dive-item {
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 15px 20px; /* Adjusted padding */
+    margin-bottom: 15px;
+    background-color: #f8f9fa;
+    position: relative; /* Make deep dive items relative too */
+}
+.deep-dive-item h4 {
+     margin-top: 0;
+     margin-bottom: 10px;
+     color: #5f6368; /* Greyish text for sub-heading */
+     font-weight: 500;
+}
+
+/* Status Indicator */
+.status-indicator {
+    background-color: #e8f0fe; /* Light blue background */
+    color: var(--primary-color);
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 25px;
+    font-weight: 500;
+    text-align: center;
+    border: 1px solid #d2e3fc;
+    transition: background-color 0.3s ease;
+}
+.status-indicator.working {
+     background-color: #fff3e0; /* Light orange background when busy */
+     color: #e67e22;
+     border-color: #ffe0b2;
+}
+
+
+/* Overall container for deep dive results - acts as timeline base */
+.timeline-container {
+    position: relative;
+    padding-left: 30px; /* Space for timeline elements */
+    margin-top: 20px;
+}
+
+/* Styling for individual progress items (initial scan, suggestions, deep dives, final report) */
+.progress-item {
+    background-color: #ffffff; /* White background for items */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    position: relative; /* Needed for timeline pseudo-elements and copy button */
+    opacity: 0; /* Start hidden for animation */
+    transform: translateY(20px); /* Start slightly lower for animation */
+    animation: fadeInUp 0.5s ease-out forwards;
+    /* Add left border for visual distinction */
+    border-left: 4px solid var(--primary-color);
+}
+.progress-item.sub-dive-result {
+     margin-left: 25px; /* Indent sub-dives */
+     border-left-color: var(--secondary-color); /* Green border for sub-dives */
+}
+.progress-item.custom-dive-result {
+     border-left-color: var(--accent-color); /* Yellow border for custom dives */
+}
+.initial-scan-item {
+     border-left-color: #80868b; /* Grey border for initial scan */
+}
+.suggestions-item {
+     border-left-color: #1a73e8; /* Positive blue for suggestions area */
+     background-color: #f8f9fa; /* Slightly different bg */
+     padding-top: 15px;
+     padding-bottom: 15px;
+}
+.final-report-item {
+     border-left-color: var(--error-color); /* Red border for final report */
+     margin-top: 20px;
+}
+
+/* Style headings inside items */
+.progress-item h3, .progress-item h4, .progress-item h5 {
+     margin-top: 0; /* Remove default top margin */
+     margin-bottom: 15px;
+     padding-bottom: 8px;
+     border-bottom: 1px solid #eee;
+     color: #5f6368; /* Greyish heading color */
+     font-weight: 500;
+     display: flex; /* Align icon and text */
+     align-items: center;
+}
+
+/* Add icons using ::before pseudo-element */
+.progress-item h3::before,
+.progress-item h4::before,
+.progress-item h5::before {
+     font-family: 'Arial', sans-serif; /* Or use an icon font like Font Awesome */
+     margin-right: 10px;
+     font-size: 1.1em;
+     font-weight: bold;
+     border-radius: 50%;
+     width: 24px;
+     height: 24px;
+     display: inline-flex;
+     justify-content: center;
+     align-items: center;
+     color: white;
+}
+
+/* Specific Icons */
+.initial-scan-item h3::before { content: '🔍'; background-color: #80868b; }
+.suggestions-item h3::before { content: '💡'; background-color: #1a73e8; }
+.progress-item.ai-suggestion-dive h4::before, /* Dive from AI suggestion */
+.progress-item.ai-suggestion-dive h5::before {
+     content: '🤖'; background-color: var(--primary-color);
+}
+.progress-item.custom-dive-result h4::before, /* Dive from custom input */
+.progress-item.custom-dive-result h5::before {
+     content: '👤'; background-color: var(--accent-color);
+}
+/* Sub-dive icon (can override based on trigger later if needed) */
+.progress-item.sub-dive-result h5::before {
+     content: '↳'; /* Simple arrow for sub-dive */
+     background-color: var(--secondary-color);
+     font-size: 1.3em; /* Make arrow bigger */
+     font-weight: normal;
+}
+.final-report-item h2::before { content: '📄'; background-color: var(--error-color); margin-right: 10px; /* Adjust h2 specific */ }
+
+/* Timeline Connector Line (Simple Version) */
+/* Applied to the container holding the items */
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 12px; /* Position relative to container padding */
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background-color: #e0e0e0; /* Light grey line */
+    z-index: -1; /* Place behind items */
+}
+/* Add markers on items - tricky to align with line perfectly without JS */
+.progress-item::after { /* Marker Dot */
+    content: '';
+    position: absolute;
+    left: -22px; /* Position relative to item's padding start */
+    top: 28px; /* Adjust vertical alignment */
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border: 2px solid var(--primary-color); /* Default marker color */
+    border-radius: 50%;
+    z-index: 1; /* Above the main line */
+}
+.progress-item.sub-dive-result::after { border-color: var(--secondary-color); }
+.progress-item.custom-dive-result::after { border-color: var(--accent-color); }
+
+
+/* Animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Adjust Copy button position relative to new padding */
+
+
+/* Copy Button Styles */
+.copy-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #f1f3f4;
+    color: #5f6368;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.7; /* Slightly transparent */
+    z-index: 5; /* Ensure it's above content */
+}
+.copy-button:hover {
+    background-color: #e8eaed;
+    opacity: 1;
+}
+.copy-button.copied {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+/* Fixed Action Footer Styles */
+#action-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
+    backdrop-filter: blur(5px); /* Optional blur effect */
+    border-top: 1px solid var(--border-color);
+    padding: 10px 0; /* Vertical padding */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+    display: none; /* Initially hidden, controlled by JS */
+}
+
+.action-footer-content {
+    max-width: 1000px; /* Match container width */
+    margin: 0 auto;
+    padding: 0 20px; /* Horizontal padding */
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    align-items: center;
+    gap: 15px;
+}
+
+/* Adjust footer button styles if needed */
+#action-footer .button {
+    margin-top: 0; /* Remove top margin */
+}
+
+/* Container for sub-suggestions within a deep dive item */
+.sub-suggestion-container {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border-color); /* Separator */
+    padding-left: 20px; /* Indentation */
+}
+
+.sub-suggestion-container h5 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 0.95em;
+    color: #5f6368;
+    font-weight: 500;
+}
+
+/* Styling for individual sub-suggestion buttons */
+.sub-suggestion-button {
+    background-color: #e8f0fe; /* Light blue - same as main for now */
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 6px 12px; /* Slightly smaller */
+    border-radius: 14px; /* Pill shape */
+    cursor: pointer;
+    font-size: 0.85em; /* Slightly smaller text */
+    transition: all var(--transition-speed) ease;
+    position: relative;
+    overflow: hidden;
+    display: inline-block; /* Allow wrapping */
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.sub-suggestion-button:hover {
+    background-color: #d2e3fc;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Loading and Completed states for sub-suggestions */
+.sub-suggestion-button.loading::after {
+    /* (Same spinner animation as suggestion-button) */
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px; /* Slightly smaller spinner */
+    height: 14px;
+    margin-top: -7px;
+    margin-left: -7px;
+    border: 2px solid rgba(66, 133, 244, 0.5);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+.sub-suggestion-button.loading {
+    color: transparent;
+    pointer-events: none;
+}
+
+.sub-suggestion-button.completed {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+    cursor: default;
+    opacity: 0.8;
+    pointer-events: none;
+}
+.sub-suggestion-button.completed::before {
+    content: '✓ ';
+    font-weight: bold;
+}
+
+/* --- End of added styles --- */
+/* --- Process Summary --- */
+#process-summary-section { display: none; }
+#process-details ol {
+    padding-left: 20px;
+}
+#process-details li {
+    margin-bottom: 10px;
+}
+
+/* --- Results Section --- */
+#results-section { display: none; }
+
+/* --- Loading Spinner --- */
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+    display: none; /* Hidden initially */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- Markdown Content Styling --- */
+.content-markdown {
+    margin-top: 15px;
+    position: relative; /* Add this */
+    padding-top: 30px; /* Add padding to prevent content overlap with absolute button */
+}
+.content-markdown h1, .content-markdown h2, .content-markdown h3, .content-markdown h4, .content-markdown h5, .content-markdown h6 {
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    color: var(--text-color);
+    font-weight: 600;
+}
+.content-markdown h1 { font-size: 1.8em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em;}
+.content-markdown h2 { font-size: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em;}
+.content-markdown h3 { font-size: 1.3em; }
+.content-markdown h4 { font-size: 1.1em; }
+
+.content-markdown p {
+    margin-bottom: 1em;
+}
+
+.content-markdown ul, .content-markdown ol {
+    margin-left: 25px;
+    margin-bottom: 1em;
+}
+.content-markdown li {
+    margin-bottom: 0.5em;
+}
+
+.content-markdown a {
+    color: var(--primary-color);
+    text-decoration: none;
+    word-break: break-all;
+}
+.content-markdown a:hover {
+    text-decoration: underline;
+}
+
+.content-markdown blockquote {
+    border-left: 4px solid var(--border-color);
+    padding-left: 15px;
+    margin: 1em 0;
+    color: #5f6368;
+    font-style: italic;
+}
+
+.content-markdown code {
+    background-color: #f1f3f4;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}
+.content-markdown pre {
+    background-color: #f1f3f4;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 1em;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}
+.content-markdown pre code {
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+}
+
+.content-markdown table {
+    border-collapse: collapse;
+    margin-bottom: 1em;
+    width: auto; /* Or 100% if needed */
+}
+.content-markdown th, .content-markdown td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+}
+.content-markdown th {
+    background-color: #f1f3f4;
+    font-weight: bold;
+}
+.content-markdown hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1.5em 0;
+}
+
+/* --- Footer --- */
+footer {
+    text-align: center;
+    margin-top: auto;
+    padding: 15px;
+    font-size: 0.9em;
+    color: #5f6368;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+/* --- Add these styles to style.css --- */
+
+/* Container for buttons in the research section */
+.button-group {
+    margin-top: 15px;
+    display: flex;
+    gap: 15px; /* Space between buttons */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+/* Style for the Reset button */
+.button-outline {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.button-outline:hover {
+    background-color: rgba(66, 133, 244, 0.05); /* Very light blue background on hover */
+    box-shadow: none; /* Remove default button shadow */
+}
+
+.button-outline:disabled {
+     background-color: transparent !important;
+     color: #cccccc !important;
+     border-color: #cccccc !important;
+     cursor: not-allowed !important;
+}
+
+/* Ensure Synthesize button has enough margin when it appears */
+#synthesize-button {
+     display: none; /* Controlled by JS */
+     margin-top: 25px !important; /* More space above it */
+     margin-bottom: 10px; /* Space below it */
+     /* width: 100%; */ /* Optional: Make it full width */
+     /* text-align: center; */
+}
+
+/* --- End of added styles --- */
+
+/* --- Add these styles to style.css --- */
+
+/* Container for custom input and button */
+.custom-dive-input-group {
+    margin-top: 20px; /* Space above the custom input */
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between input and button */
+    padding-top: 15px;
+    border-top: 1px dotted var(--border-color); /* Optional separator */
+}
+
+/* Custom input field */
+.custom-dive-input {
+    flex-grow: 1; /* Take available space */
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.custom-dive-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(66, 133, 244, 0.2); /* Subtle focus */
+}
+
+/* Custom dive button styling */
+.custom-dive-button {
+    /* Using existing button classes + specific ones */
+    padding: 8px 15px !important; /* Ensure padding overrides default */
+    font-size: 0.9em !important; /* Ensure font size overrides */
+    /* No need for loading/completed classes here if we just disable */
+}
+.custom-dive-button:disabled {
+     opacity: 0.6; /* Indicate disabled state */
+}
+.custom-dive-input:disabled {
+     background-color: #f1f3f4; /* Grey out disabled input */
+     opacity: 0.7;
+}
+
+/* Adjust heading margin if custom input group is present */
+.sub-suggestion-container h5 {
+    margin-bottom: 15px;
+}
+
+
+/* --- End of added styles --- */
+
+/* --- Add or Modify in style.css --- */
+
+/* Ensure the top-level group is hidden initially */
+#top-level-custom-dive {
+    /* display: none; Now using inline style initially, JS will change to 'flex' */
+    /* Add any specific spacing if needed */
+     margin-top: 25px; /* Space between AI suggestions and custom input */
+}
+
+/* Styles for .custom-dive-input-group, .custom-dive-input, .custom-dive-button */
+/* (Keep the styles from the previous step) */
+
+/* Style for the message when no AI suggestions are found */
+#no-suggestions-message {
+    width: 100%; /* Take full width */
+    padding: 10px 0;
+}
+
+/* --- End of Changes --- */

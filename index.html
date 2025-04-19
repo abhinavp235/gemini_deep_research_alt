@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Deep Research Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Enhanced Deep Research Assistant</h1>
+    </header>
+
+    <div class="container">
+
+        <section id="config-section" class="card">
+            <h2>Configuration</h2>
+            <label for="model-select">Select Model:</label>
+            <select id="model-select">
+				<option value="gemini-2.0-flash">gemini-2.0-flash (Latest)</option>
+                <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash (Latest)</option>
+				<option value="gemini-2.5-pro-preview-03-25">gemini-2.5-Pro (Latest)</option>
+            </select>
+
+            <label for="api-key">Google AI API Key:</label>
+            <input type="password" id="api-key" placeholder="Enter your API Key here">
+            <div class="api-warning">
+                <strong>Security Warning:</strong> Use a backend proxy for production deployments to protect your API key.
+            </div>
+
+            <label for="file-upload">Upload Context Files (Optional, Text-based):</label>
+            <input type="file" id="file-upload" multiple accept=".txt,.md,.csv,.json,.html,.xml">
+            <div id="file-info" class="file-info">No files selected.</div>
+
+            <button id="save-config" class="button">Save Config & Proceed</button>
+        </section>
+
+        <section id="research-section" class="card" style="display: none;">
+            <h2>Research Topic</h2>
+            <label for="research-topic">Enter your research topic or question:</label>
+            <textarea id="research-topic" placeholder="e.g., Analyze the evolution of AI ethics guidelines..."></textarea>
+            <div class="button-group">
+                 <button id="start-research" class="button button-secondary" disabled>Start Initial Research Scan</button>
+				<!--
+                 <button id="reset-button-old" class="button button-outline">Reset Research Old</button>
+                 -->
+            </div>
+        </section>
+
+        <section id="progress-section" class="card">
+            <h2>Research Progress & Interaction</h2>
+
+            <div id="current-action-status" class="status-indicator">
+                Status: Idle
+            </div>
+            <div id="loader" class="loader"></div>
+
+            <div id="initial-scan-output" class="step-output output-container" style="display: none;">
+                 <div class="progress-item initial-scan-item">
+                    <h3>Initial Scan & Overview</h3>
+                    <div class="content-markdown"></div>
+                 </div>
+            </div>
+
+            <div id="suggestions-area" style="display: none;">
+                 <div class="progress-item suggestions-item">
+                     <h3>Suggested & Custom Exploration</h3>
+                     <div id="suggestion-buttons" class="suggestion-container">
+                        <p id="no-suggestions-message" style="display: none; font-style: italic; color: #5f6368;">No specific topics suggested by AI. Use the custom input below.</p>
+                     </div>
+                     <div id="top-level-custom-dive" class="custom-dive-input-group" style="display: none;">
+                        <input type="text" class="custom-dive-input" placeholder="Ask a follow-up question or specify topic...">
+                        <button class="custom-dive-button button button-outline">Explore</button>
+                     </div>
+                 </div>
+            </div>
+
+             <div id="deep-dive-results" class="step-output timeline-container" style="display: none;">
+                 <div id="deep-dive-content-container">
+                     </div>
+            </div>
+        </section>
+
+        <section id="process-summary-section" class="card">
+            <h2>Research Process Summary</h2>
+            <div id="process-details">
+                <p>This section will show the step-by-step approach taken by the AI and user choices.</p>
+            </div>
+        </section>
+
+        <section id="results-section" class="card">
+            <h2>Final Research Report</h2>
+             <div id="synthesis-loader" class="loader" style="display: none;"></div>
+            <div id="final-report-content" class="content-markdown"> <p>The synthesized report will appear here once generated.</p>
+            </div>
+        </section>
+
+    </div>
+	 <div id="action-footer" style="display: none;">
+        <div class="action-footer-content">
+            <button id="footer-reset-button" class="button button-outline">Reset Research</button>
+            <button id="footer-synthesize-button" class="button button-positive">Synthesize Final Report</button>
+        </div>
+    </div>
+    <footer>
+        Powered by Google Gemini | Enhanced Research App
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
