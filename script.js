@@ -1034,9 +1034,264 @@ ${fullContext}
 Generate the final Markdown report based *only* on the context provided above and the specified guidelines.`;
 }
 
+// === Add this helper function somewhere in script.js ===
+
+/**
+ * Creates a promise that rejects after a specified timeout.
+ * @param {number} ms Timeout duration in milliseconds.
+ * @param {string} [errorMessage='Promise timed out'] Optional error message.
+ * @returns {Promise<never>} A promise that rejects on timeout.
+ */
+function timeoutPromise(ms, errorMessage = 'Promise timed out') {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, ms);
+  });
+}
+
+// === End of helper function ===
+
+// === Replace the ENTIRE callGeminiAPI function ===
+
+/**
+ * Main function to interact with Gemini API.
+ * Implements an internal Plan -> Parallel Execute -> Synthesize strategy.
+ * Falls back to a direct call if internal steps fail significantly.
+ * Maintains the original external signature.
+ *
+ * @param {string} promptText The original user prompt or instruction.
+ * @param {boolean} [useGrounding=false] Whether grounding should be used (applies to parallel execution).
+ * @returns {Promise<string>} The final synthesized text response.
+ */
+async function callGeminiAPI(originalPromptText, useGrounding = false) {
+    console.log(`callGeminiAPI invoked for: "${summarizeContent(originalPromptText, 50)}" (Grounding: ${useGrounding}) - Using Multi-Step Strategy`);
+    const MAX_PARALLEL_QUERIES = 3; // How many parallel calls to attempt
+    const PARALLEL_TIMEOUT_MS = 30000; // 30 seconds timeout for each parallel call
+
+    // --- Internal Helper for making individual LLM calls ---
+    // This reduces code duplication for the internal steps
+    async function _internalLlmCall(prompt, groundingNeeded, isPlanning = false) {
+        console.log(`  _internalLlmCall: (Grounding: ${groundingNeeded}) "${summarizeContent(prompt, 50)}"`);
+        const endpoint = `${API_ENDPOINT_BASE}${selectedModel}:generateContent?key=${apiKey}`;
+        const requestBody = {
+            contents: [{ parts: [{ text: prompt }] }],
+            // Lower temperature slightly for planning/synthesis? Optional.
+            // generationConfig: { temperature: isPlanning ? 0.5 : 0.7 },
+        };
+        if (groundingNeeded) {
+            requestBody.tools = [{ googleSearch: {} }];
+            console.log("Attempting to use Google Search grounding.");
+        }
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                let errorBody = await response.text();
+                try { errorBody = JSON.parse(errorBody); } catch (e) { /* Use text */ }
+                 console.error("  _internalLlmCall Error Response:", errorBody);
+                throw new Error(`Internal API call failed: ${response.status} ${response.statusText} - ${errorBody?.error?.message || JSON.stringify(errorBody)}`);
+            }
+            const data = await response.json();
+
+            // Basic response extraction (similar to original)
+            const candidate = data?.candidates?.[0];
+            const contentPart = candidate?.content?.parts?.[0];
+             if (contentPart && typeof contentPart.text === 'string') {
+                 return contentPart.text;
+             } else if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+                  throw new Error(`Internal API call finished unexpectedly. Reason: ${candidate.finishReason}`);
+             } else if (data.promptFeedback?.blockReason) {
+                  throw new Error(`Internal Request blocked: ${data.promptFeedback.blockReason}`);
+             } else {
+                 throw new Error("Could not extract text from internal API response.");
+             }
+        } catch (error) {
+            console.error("  _internalLlmCall Fetch/Processing Error:", error);
+            throw error; // Re-throw to be caught by main logic
+        }
+    }
+    // --- End Internal Helper ---
+
+
+    // === Main Multi-Step Logic ===
+    let plan = null;
+    let subQueries = [];
+    let parallelResults = [];
+    let finalSynthesizedResponse = null;
+    let fallbackNeeded = false;
+
+    try {
+        // --- STEP 1: Planning ---
+        console.log("  Multi-Step: 1. Planning...");
+        updateCurrentActionStatus("Planning research strategy...", true); // Update status
+
+        // Read current tone/focus settings for context if needed in planning/synthesis
+        const toneInstructionsForContext = getToneFocusInstructions(); // Use existing helper
+
+        const planningPrompt = `Based on the user's request below, break it down into ${MAX_PARALLEL_QUERIES} specific, concise sub-queries that, when answered individually, will provide the necessary information to comprehensively address the original request. Balance critical areas (may require some overlap) and auxiliary areas for breadth. Consider the user's tone/focus guidelines provided for context.
+
+User's Request:
+"${originalPromptText}"
+
+User's Tone/Focus Guidelines:
+${toneInstructionsForContext}
+
+Output ONLY a valid JSON array of strings, where each string is a sub-query. Example:
+["Sub-query 1 about aspect X", "Sub-query 2 comparing Y and Z", "Sub-query 3 asking for details on A"]`;
+
+        try {
+            const planningResponse = await _internalLlmCall(planningPrompt, false, true); // No grounding for planning, mark as planning call
+            console.log("  Raw Planning Response:", planningResponse);
+            // Attempt to parse JSON - be robust
+            const cleanedResponse = planningResponse.trim().replace(/^```json\s*|```$/g, ''); // Remove potential markdown fences
+            plan = JSON.parse(cleanedResponse);
+            if (!Array.isArray(plan) || !plan.every(item => typeof item === 'string')) {
+                throw new Error("Planning response was not a valid JSON array of strings.");
+            }
+            subQueries = plan.slice(0, MAX_PARALLEL_QUERIES); // Limit to max
+            console.log("  Planning Successful. Sub-queries:", subQueries);
+            if (subQueries.length === 0) throw new Error("Planning resulted in zero sub-queries.");
+        } catch (planningError) {
+            console.error("  Multi-Step: 1. Planning FAILED.", planningError);
+            fallbackNeeded = true; // Mark for fallback
+        }
+
+        // --- STEP 2: Parallel Execution (only if planning succeeded) ---
+        if (!fallbackNeeded) {
+            console.log(`  Multi-Step: 2. Parallel Execution (Timeout: ${PARALLEL_TIMEOUT_MS / 1000}s)...`);
+            updateCurrentActionStatus(`Executing ${subQueries.length} parallel research tasks...`, true);
+
+            const parallelPromises = subQueries.map(async (query, index) => {
+                const subQueryPrompt = `Answer the following specific query comprehensively: "${query}"\n\n(Context: This is part of a larger request about "${summarizeContent(originalPromptText, 30)}". Provide detailed information relevant *only* to this specific query. Include citations if possible.)`; // Add minimal context
+                console.log(`    Starting parallel query ${index + 1}: "${query}"`);
+
+                try {
+                    const resultPromise = _internalLlmCall(subQueryPrompt, useGrounding); // Apply original grounding flag here
+                    const response = await Promise.race([
+                        resultPromise,
+                        timeoutPromise(PARALLEL_TIMEOUT_MS, `Query ${index + 1} timed out`)
+                    ]);
+                    console.log(`    Parallel query ${index + 1} SUCCEEDED.`);
+                    return { query: query, response: response }; // Return successful response with original query
+                } catch (error) {
+                    console.warn(`    Parallel query ${index + 1} FAILED or Timed Out:`, error.message);
+                    // Throw the error so allSettled catches it as rejected
+                    throw new Error(`Query "${query}" failed: ${error.message}`);
+                }
+            });
+
+            // Wait for all parallel calls to settle (succeed, fail, or timeout)
+            const settledResults = await Promise.allSettled(parallelPromises);
+            console.log("  Parallel Execution Settled.");
+
+            settledResults.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    parallelResults.push(result.value); // Store { query, response }
+                } else {
+                    // Log rejection reason (already logged above, but good to confirm)
+                    console.warn(`  Result for Query ${index + 1} was rejected: ${result.reason?.message || result.reason}`);
+                }
+            });
+
+            console.log(`  Parallel Execution Complete. ${parallelResults.length} successful results out of ${subQueries.length}.`);
+
+            // Check if we got enough results
+            if (parallelResults.length === 0) {
+                console.warn("  Multi-Step: 2. Parallel Execution yielded NO successful results.");
+                // Decide: Fallback or try synthesis with nothing? Let's try synthesis.
+                // fallbackNeeded = true; // Optionally fallback here too
+            }
+        }
+
+        // --- STEP 3: Synthesis (only if planning succeeded) ---
+        if (!fallbackNeeded) {
+            console.log("  Multi-Step: 3. Synthesizing Results...");
+            updateCurrentActionStatus("Synthesizing results...", true);
+
+            let synthesisContext = "No results gathered from parallel execution.";
+            if (parallelResults.length > 0) {
+                 synthesisContext = parallelResults.map((res, i) =>
+                     `--- Result for Sub-Query ${i + 1}: "${res.query}" ---\n${res.response}\n--- End Result ${i + 1} ---`
+                 ).join('\n\n');
+            }
+
+            // Re-read tone/focus for synthesis step
+            const finalToneInstructions = getToneFocusInstructions();
+
+            const synthesisPrompt = `You are tasked with synthesizing information to answer a user's original request. You previously planned sub-queries, and the results from executing those queries are provided below.
+
+User's Original Request:
+"${originalPromptText}"
+
+Results from Parallel Sub-Query Execution:
+${synthesisContext}
+
+Your Task:
+Synthesize the provided results into a single, coherent, comprehensive response that directly addresses the **User's Original Request**.
+- Integrate information smoothly.
+- Resolve any minor contradictions logically, noting significant discrepancies if necessary.
+- Ensure the final output strictly adheres to the user's original tone and focus guidelines provided below.
+- Format the final output in clean Markdown.
+- If the provided results are insufficient or empty, state that you couldn't gather enough specific information but attempt to answer the original request based on your general knowledge, while still adhering to the tone/focus guidelines.
+
+User's Tone/Focus Guidelines:
+${finalToneInstructions}
+
+Generate ONLY the final synthesized Markdown response for the original request.`;
+
+            try {
+                finalSynthesizedResponse = await _internalLlmCall(synthesisPrompt, false); // No grounding for synthesis
+                console.log("  Multi-Step: 3. Synthesis Successful.");
+            } catch (synthesisError) {
+                 console.error("  Multi-Step: 3. Synthesis FAILED.", synthesisError);
+                 fallbackNeeded = true; // Fallback if synthesis itself fails
+            }
+        }
+
+    } catch (outerError) {
+         // Catch unexpected errors in the orchestration logic itself
+         console.error("  Multi-Step: Outer orchestration error.", outerError);
+         fallbackNeeded = true;
+    }
+
+
+    // --- STEP 4: Fallback / Return ---
+    if (fallbackNeeded) {
+        console.warn("Multi-Step strategy failed or was insufficient. Falling back to direct API call.");
+        updateCurrentActionStatus("Falling back to direct request...", true);
+        try {
+             // Use the internal helper for the direct call as well
+            finalSynthesizedResponse = await _internalLlmCall(originalPromptText, useGrounding);
+            console.log("  Fallback direct call successful.");
+             updateCurrentActionStatus("Direct request complete.", false);
+        } catch (fallbackError) {
+            console.error("  Fallback direct call FAILED.", fallbackError);
+            updateCurrentActionStatus("Fallback direct call failed.", false);
+             // Throw the error from the fallback attempt
+             throw new Error(`Multi-step strategy failed, and fallback direct call also failed: ${fallbackError.message}`);
+        }
+    }
+
+    // Log final output length for debugging
+    console.log(`callGeminiAPI Multi-Step returning. Final length: ${finalSynthesizedResponse?.length || 0}`);
+    updateCurrentActionStatus("Task complete.", false); // Final status update
+
+    // Return the synthesized result OR the fallback result
+    return finalSynthesizedResponse ?? ""; // Ensure we return a string
+
+}
+
+// === End of Replacement ===
+
 
 // --- Gemini API Call (Mostly unchanged, ensure grounding toggle works) ---
-async function callGeminiAPI(promptText, useGrounding = false) {
+async function callGeminiAPI_Single(promptText, useGrounding = false) {
     console.log(`Calling Gemini API (${selectedModel}). Grounding: ${useGrounding}. Prompt length: ${promptText.length}`);
     const endpoint = `${API_ENDPOINT_BASE}${selectedModel}:generateContent?key=${apiKey}`;
 
